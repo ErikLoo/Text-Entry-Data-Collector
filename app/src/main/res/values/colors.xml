@@ -7,7 +7,7 @@
     <color name="colorAccent">#FF0000</color>
     <color name="darkWhite">#E5E5E5</color>
     <color name = "lightGrey">#DCDCDC</color>
-    <color name="dimgrey">#696969</color>
+    <color name="dimgrey">#C0C0C0</color>
     <color name = "transparent">#00000000</color>
 </resources>
 

@@ -63,6 +63,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     private Workbook wb;
     private int row_count=1;
     private String inputChar;
+    private String intendedChar;
     private long startTime;
     private long endTime;
 
@@ -221,7 +222,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         wb=new HSSFWorkbook();
 
 //        create a sheet for each type data and
-        String [] input_list = {"character","start time","end time"};
+        String [] input_list = {"intended character","typed character","start time","end time"};
         generate_header("input_time", input_list);
 
         String [] touch_list = {"time","x","y"};
@@ -278,15 +279,20 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         Row row =sheet.createRow(row_count);
 
         cell=row.createCell(0);
+        cell.setCellValue(intendedChar);
+        cell.setCellStyle(cellStyle);
+
+
+        cell=row.createCell(1);
         cell.setCellValue(inputChar);
         cell.setCellStyle(cellStyle);
 
-        cell=row.createCell(1);
+        cell=row.createCell(2);
         cell.setCellValue(startTime);
         cell.setCellStyle(cellStyle);
 
 
-        cell=row.createCell(2);
+        cell=row.createCell(3);
         cell.setCellValue(endTime);
         cell.setCellStyle(cellStyle);
 
@@ -375,7 +381,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 //                editText.setSelection(cursor_pos);
 //
 //            }
-
+            intendedChar = "";
             myChar = "Delete";
 
 //            inputConnection.commitText("a", 1);
@@ -391,6 +397,10 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         } else {
             String value = keyValues.get(view.getId());
             myChar =value;
+//            get the intended character
+            intendedChar = Character.toString(editText.getText().charAt(cursor_pos));
+
+            if (intendedChar.equals(" ")){intendedChar="Space";}
 
             if (value.equals(" ")){myChar = "Space";}
 
