@@ -4,21 +4,29 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.hardware.Sensor;
 import android.hardware.SensorEvent;
 import android.hardware.SensorEventListener;
 import android.hardware.SensorManager;
+import android.support.constraint.ConstraintLayout;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputType;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextWatcher;
+import android.text.style.ForegroundColorSpan;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
+import android.view.inputmethod.InputMethod;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.TextView;
@@ -42,7 +50,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 
-public class MainActivity extends AppCompatActivity {
+public class MainActivity extends AppCompatActivity implements InputStatusTracker {
     private TextView touch_x,touch_y;
     private MyCharacterKeyboard keyboard;
     private String inputText;
@@ -60,6 +68,13 @@ public class MainActivity extends AppCompatActivity {
     private TextView accel_x,accel_y,accel_z;
     private TextView gyro_x,gyro_y,gyro_z;
     private TextView char_count;
+
+    private Button show_data_but;
+    private ConstraintLayout data_view;
+
+    private EditText editText;
+    private Button next_but;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -70,7 +85,9 @@ public class MainActivity extends AppCompatActivity {
         touch_y = (TextView) findViewById(R.id.touch_y);
 
 //        initalize keyboard
-        final EditText editText = (EditText) findViewById(R.id.editText);
+//        final EditText editText = (EditText) findViewById(R.id.editText);
+        editText = (EditText) findViewById(R.id.editText);
+
         keyboard = (MyCharacterKeyboard) findViewById(R.id.character_keyboard);
         editText.setRawInputType(InputType.TYPE_CLASS_TEXT);
         editText.setTextIsSelectable(true);
@@ -78,11 +95,19 @@ public class MainActivity extends AppCompatActivity {
 
         ReadTextFile();
 
-
-//        read the first line of the txt file
+//       read the first line of the txt file
         inputText = readTextLine();
+
+//        Spannable WordtoSpan = new SpannableString(inputText);
+//        WordtoSpan.setSpan(new ForegroundColorSpan(Color.BLUE), 0, 6, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        editText.setText(WordtoSpan);
+
         input_text_view = (TextView) findViewById(R.id.input_text);
         input_text_view.setText(inputText);
+
+        editText.setText(inputText);
+        editText.setTextColor(Color.rgb(160,160,160));
+//        editText.setTextColor(color.);
 
         char_count = (TextView) findViewById(R.id.char_count);
         char_count.setText("(0/"+inputText.length()+")");
@@ -90,6 +115,7 @@ public class MainActivity extends AppCompatActivity {
 //        editText.setCursorVisible(true);
 //      add cursor
         editText.requestFocus();
+        editText.setSelection(0);
 
         InputConnection ic = editText.onCreateInputConnection(new EditorInfo());
         keyboard.setInputConnection(ic);
@@ -112,38 +138,20 @@ public class MainActivity extends AppCompatActivity {
         gyro_y = (TextView) findViewById(R.id.gyro_y);
         gyro_z = (TextView) findViewById(R.id.gyro_z);
 
-        final Button next_but = (Button) findViewById(R.id.next_but);
+//        final Button next_but = (Button) findViewById(R.id.next_but);
+        next_but = (Button) findViewById(R.id.next_but);
 
-        editText.addTextChangedListener(new TextWatcher() {
+//        hide the native keyboard if the editTExt is clicked
+        editText.setOnClickListener(new View.OnClickListener() {
             @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
-
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                int strLen = charSequence.length();
-//                String t_x = touch_x.getText().toString();
-//                String t_y = touch_y.getText().toString();
-//
-                char_count.setText("("+strLen + "/"+inputText.length()+")");
-
-                if (strLen == inputText.length()){
-//                    make the button visible it the length is reached
-                    next_but.setVisibility(View.VISIBLE);
-//                    output a excel file to storage
-                }
-                else{
-                    next_but.setVisibility(View.INVISIBLE);
-                }
-
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-
+            public void onClick(View view) {
+//                disable the keyboard
+                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                imm.hideSoftInputFromWindow(view.getWindowToken(),0);
+                editText.setSelection(keyboard.getCursorPos());
             }
         });
+
 
         next_but.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -154,6 +162,36 @@ public class MainActivity extends AppCompatActivity {
 //                read the next line of text
                 inputText = readTextLine();
                 input_text_view.setText(inputText);
+                editText.setText(inputText);
+                if (inputText!=null){char_count.setText("(0/"+inputText.length()+")");}
+                keyboard.reset_cursor();
+                next_but.setVisibility(View.INVISIBLE);
+
+            }
+        });
+
+        show_data_but = (Button) findViewById(R.id.show_data);
+//        show_data_but.setText("SHOW");
+
+        data_view = (ConstraintLayout) findViewById(R.id.data_view);
+
+        data_view.setVisibility(View.INVISIBLE);
+
+        show_data_but.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if (data_view.getVisibility()==View.VISIBLE){
+                    data_view.setVisibility(View.INVISIBLE);
+//                    show_data_but.setText("SHOW");
+//                    editText.setVisibility(View.INVISIBLE);
+                }
+                else{
+                    data_view.setVisibility(View.VISIBLE);
+//                    show_data_but.setText("HIDE");
+//                    editText.setVisibility(View.VISIBLE);
+//                    editText.requestFocus();
+
+                }
             }
         });
 
@@ -174,7 +212,10 @@ public class MainActivity extends AppCompatActivity {
             string = reader.readLine();
             if (string == null){
 //                close the stream is the end has been reached
-                Toast.makeText(getApplicationContext(),"All tasks complete",Toast.LENGTH_LONG).show();
+                Toast toast =  Toast.makeText(getApplicationContext(),"All tasks complete",Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                keyboard.setVisibility(View.GONE);
                 is.close();
             }else{
                 return string;
@@ -279,5 +320,27 @@ public class MainActivity extends AppCompatActivity {
         System.out.println("y: " + y);
         touch_x.setText( Float.toString(x));
         touch_y.setText( Float.toString(y));
+    }
+
+    public void justTest(){
+
+    }
+
+    @Override
+    public void updateCharCount() {
+        int strLen = inputText.length();
+//                String t_x = touch_x.getText().toString();
+//                String t_y = touch_y.getText().toString();
+//
+        char_count.setText("("+editText.getSelectionStart() + "/"+ strLen+")");
+
+        if (editText.getSelectionStart() == inputText.length()){
+//                    make the button visible it the length is reached
+            next_but.setVisibility(View.VISIBLE);
+//                    output a excel file to storage
+        }
+        else{
+            next_but.setVisibility(View.INVISIBLE);
+        }
     }
 }

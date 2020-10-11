@@ -4,11 +4,16 @@ import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
+import android.graphics.Color;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.view.MotionEventCompat;
+import android.text.Spannable;
+import android.text.SpannableString;
 import android.text.TextUtils;
+import android.text.style.ForegroundColorSpan;
 import android.util.AttributeSet;
 import android.util.SparseArray;
+import android.view.Gravity;
 import android.view.HapticFeedbackConstants;
 import android.view.LayoutInflater;
 import android.view.MotionEvent;
@@ -16,6 +21,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.view.inputmethod.InputConnection;
 import android.widget.Button;
+import android.widget.EditText;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -51,7 +57,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
     private TextView touch_x,touch_y;
 
-    private Activity myActivty;
+    private Activity myActivity;
 
 //    log time
     private Workbook wb;
@@ -70,6 +76,12 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     private int gyro_id = 2;
     private long gyrcoTime;
     private int[] row_count_array = {1,1,1};
+
+    private EditText editText;
+
+    private Spannable WordtoSpan;
+
+    private int cursor_pos = 0;
 
     public MyCharacterKeyboard(Context context) {
         this(context, null, 0);
@@ -175,13 +187,13 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         keyValues.put(R.id.button_m, "m");
         keyValues.put(R.id.button_space, " ");
 
-        myActivty = (Activity) this.getContext();
+        myActivity = (Activity) this.getContext();
 //        System.out.println("Myactivity: " + myActivty);
 
-        if (ActivityCompat.checkSelfPermission(myActivty, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        if (ActivityCompat.checkSelfPermission(myActivity, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                 != PackageManager.PERMISSION_GRANTED) {
 
-            ActivityCompat.requestPermissions((Activity) myActivty,
+            ActivityCompat.requestPermissions((Activity) myActivity,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
 
             return;
@@ -220,6 +232,12 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
         String [] gyro_list = {"time","gyro_x","gyro_y","gyro_z"};
         generate_header("gyro_data", gyro_list);
+
+//        reset the all the counters
+        row_count_array[0] = 1;
+        row_count_array[1] = 1;
+        row_count_array[2] = 1;
+        row_count=1;
     }
 
     private void generate_header(String sheetName,String[] headerList){
@@ -308,13 +326,19 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     }
 
     public void output_excel(String text_entry){
-        File file = new File(myActivty.getExternalFilesDir(null),"text_entry_"+text_entry+".xls");
+        File file = new File(myActivity.getExternalFilesDir(null),"text_entry_"+text_entry+".xls");
         FileOutputStream outputStream =null;
 
         try {
             outputStream=new FileOutputStream(file);
             wb.write(outputStream);
-            Toast.makeText(getContext(),"saving " + "text_entry_"+text_entry+".xls" + myActivty.getExternalFilesDir(null),Toast.LENGTH_LONG).show();
+//            Toast.makeText(getContext(),"saving " + "text_entry_"+text_entry+".xls" + myActivity.getExternalFilesDir(null),Toast.LENGTH_LONG).show();
+
+
+            Toast toast =  Toast.makeText(getContext(),"saving " + "text_entry_"+text_entry+".xls" + myActivity.getExternalFilesDir(null),Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+
         } catch (java.io.IOException e) {
             e.printStackTrace();
 
@@ -332,25 +356,55 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     @Override
     public void onClick(View view) {
         String myChar;
+        editText = (EditText) myActivity.findViewById(R.id.editText);
+        WordtoSpan = new SpannableString(editText.getText());
+//        set text color to black
+        WordtoSpan.setSpan(new ForegroundColorSpan(Color.rgb(160,160,160)), 0, editText.getText().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
         if (inputConnection == null)
             return;
 
         if (view.getId() == R.id.button_del) {
             CharSequence selectedText = inputConnection.getSelectedText(0);
 
-            if (TextUtils.isEmpty(selectedText)) {
-                inputConnection.deleteSurroundingText(1, 0);
-            } else {
-                inputConnection.commitText("", 1);
-            }
+//            if (TextUtils.isEmpty(selectedText)) {
+////                inputConnection.deleteSurroundingText(1, 0);
+//                editText.setSelection(cursor_pos);
+//            } else {
+////                inputConnection.commitText("", 1);
+//                cursor_pos--;
+//                editText.setSelection(cursor_pos);
+//
+//            }
+
             myChar = "Delete";
+
+//            inputConnection.commitText("a", 1);
+//            inputConnection.deleteSurroundingText(1, 0);
+
+            if (cursor_pos>0){cursor_pos--;}
+
+            if (cursor_pos<editText.getText().length()) {
+                WordtoSpan.setSpan(new ForegroundColorSpan(Color.RED), 0, cursor_pos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                editText.setText(WordtoSpan);
+                editText.setSelection(cursor_pos);
+            }
         } else {
             String value = keyValues.get(view.getId());
             myChar =value;
 
             if (value.equals(" ")){myChar = "Space";}
 
-            inputConnection.commitText(value, 1);
+//            used to tigger a onTextChange response
+//            inputConnection.commitText("a", 1);
+//            inputConnection.deleteSurroundingText(1, 0);
+
+            if (cursor_pos<editText.getText().length()) {
+                cursor_pos++;
+                WordtoSpan.setSpan(new ForegroundColorSpan(Color.RED), 0, cursor_pos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                editText.setText(WordtoSpan);
+                editText.setSelection(cursor_pos);
+            }
+
         }
 
 //      perform haptic feedback
@@ -364,6 +418,12 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
                 HapticFeedbackConstants.VIRTUAL_KEY,
                 HapticFeedbackConstants.FLAG_IGNORE_GLOBAL_SETTING  // Ignore device's setting. Otherwise, you can use FLAG_IGNORE_VIEW_SETTING to ignore view's setting.
         );
+
+//        need to cast getContext to the interface type in order to access the method
+        ((InputStatusTracker) getContext()).updateCharCount();
+
+//        update the char count in the main function
+
     }
 
     public void setInputConnection(InputConnection ic) {
@@ -376,8 +436,8 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         mLastX = event.getX();
         mLastY = event.getY();
 
-        touch_x = (TextView) myActivty.findViewById(R.id.touch_x);
-        touch_y = (TextView) myActivty.findViewById(R.id.touch_y);
+        touch_x = (TextView) myActivity.findViewById(R.id.touch_x);
+        touch_y = (TextView) myActivity.findViewById(R.id.touch_y);
 
 
 //        Always return false as we are not trying to intercept the touch event
@@ -395,12 +455,22 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
         touchTime = System.currentTimeMillis();
         float[] touch_data = {mLastX,mLastY};
+//        Toast.makeText(getContext(),"touch_data x: " + touch_data[0], Toast.LENGTH_SHORT).show();
         add_data_rows("touch_data",touch_id,touchTime,touch_data);
         return false;
     }
 
     public void generateExcel(){
         Toast.makeText(getContext(),"Typing complete. Saving data...", Toast.LENGTH_SHORT).show();
+    }
+
+    public void reset_cursor(){
+        cursor_pos = 0;
+        editText.setSelection(cursor_pos);
+    }
+
+    public int getCursorPos(){
+        return cursor_pos;
     }
 
 }
