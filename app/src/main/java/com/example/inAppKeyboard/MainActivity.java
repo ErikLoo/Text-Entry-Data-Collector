@@ -75,6 +75,9 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
     private EditText editText;
     private Button next_but;
 
+    private float x1,x2;
+    static final int MIN_DISTANCE = 150;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -314,17 +317,36 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
         }
     };
 
+    @Override
+    public boolean onTouchEvent(MotionEvent event) {
 
-    public void setTouchCoordinates(float x,float y){
+        switch(event.getAction())
+        {
+            case MotionEvent.ACTION_DOWN:
+                x1 = event.getX();
+                break;
+            case MotionEvent.ACTION_UP:
+                x2 = event.getX();
+                float deltaX = x2 - x1;
+                if (Math.abs(deltaX) > MIN_DISTANCE)
+                {
+                    if (x2 < x1)
+                    {
+                        keyboard.deleteChar();
+                    }
+                }
+                break;
+        }
+        return super.onTouchEvent(event);
+    }
+
+    public void setTouchCoordinates(float x, float y){
         System.out.println("x:" + x);
         System.out.println("y: " + y);
         touch_x.setText( Float.toString(x));
         touch_y.setText( Float.toString(y));
     }
 
-    public void justTest(){
-
-    }
 
     @Override
     public void updateCharCount() {

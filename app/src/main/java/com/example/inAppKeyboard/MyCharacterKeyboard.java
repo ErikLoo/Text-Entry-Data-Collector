@@ -84,6 +84,8 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
     private int cursor_pos = 0;
 
+    private String myChar;
+
     public MyCharacterKeyboard(Context context) {
         this(context, null, 0);
     }
@@ -361,7 +363,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
     @Override
     public void onClick(View view) {
-        String myChar;
+//        String myChar;
         editText = (EditText) myActivity.findViewById(R.id.editText);
         WordtoSpan = new SpannableString(editText.getText());
 //        set text color to black
@@ -370,7 +372,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
             return;
 
         if (view.getId() == R.id.button_del) {
-            CharSequence selectedText = inputConnection.getSelectedText(0);
+//            CharSequence selectedText = inputConnection.getSelectedText(0);
 
 //            if (TextUtils.isEmpty(selectedText)) {
 ////                inputConnection.deleteSurroundingText(1, 0);
@@ -381,24 +383,35 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 //                editText.setSelection(cursor_pos);
 //
 //            }
+            myChar = "Invalid Del";
             intendedChar = "";
-            myChar = "Delete";
-
-//            inputConnection.commitText("a", 1);
-//            inputConnection.deleteSurroundingText(1, 0);
-
-            if (cursor_pos>0){cursor_pos--;}
-
-            if (cursor_pos<editText.getText().length()) {
-                WordtoSpan.setSpan(new ForegroundColorSpan(Color.RED), 0, cursor_pos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-                editText.setText(WordtoSpan);
-                editText.setSelection(cursor_pos);
-            }
+            Toast toast =  Toast.makeText(getContext(),"swipe left here to delete" ,Toast.LENGTH_LONG);
+            toast.setGravity(Gravity.CENTER, 0, 0);
+            toast.show();
+//            intendedChar = "";
+//
+//
+////            inputConnection.commitText("a", 1);
+////            inputConnection.deleteSurroundingText(1, 0);
+//
+//            if (cursor_pos>0){cursor_pos--;}
+//
+//            if (cursor_pos<editText.getText().length()) {
+//                WordtoSpan.setSpan(new ForegroundColorSpan(Color.RED), 0, cursor_pos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//                editText.setText(WordtoSpan);
+//                editText.setSelection(cursor_pos);
+//            }
+//            deleteChar();
         } else {
             String value = keyValues.get(view.getId());
-            myChar =value;
+            myChar = value;
 //            get the intended character
-            intendedChar = Character.toString(editText.getText().charAt(cursor_pos));
+
+            if (cursor_pos<editText.getText().length()){
+                intendedChar = Character.toString(editText.getText().charAt(cursor_pos));
+            }else{
+                intendedChar = "EOS";
+            }
 
             if (intendedChar.equals(" ")){intendedChar="Space";}
 
@@ -419,6 +432,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
 //      perform haptic feedback
 //        input end time and the character itself
+//       log the time when the finger leaves the key
         endTime = System.currentTimeMillis();
         inputChar = myChar;
 //        add to row in here
@@ -438,6 +452,35 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
     public void setInputConnection(InputConnection ic) {
         inputConnection = ic;
+    }
+
+    public void deleteChar(){
+        if (editText!=null){
+
+//            Toast toast =  Toast.makeText(getContext(),"delete a character" ,Toast.LENGTH_LONG);
+//            toast.setGravity(Gravity.CENTER, 0, 0);
+//            toast.show();
+            WordtoSpan.setSpan(new ForegroundColorSpan(Color.rgb(160,160,160)), 0, editText.getText().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+
+            intendedChar = "";
+            myChar = "Del";
+            if (cursor_pos>0){cursor_pos--;}
+
+            if (cursor_pos<editText.getText().length()) {
+//                Toast.makeText(getContext(),"cur pos: " + cursor_pos, Toast.LENGTH_SHORT).show();
+                WordtoSpan.setSpan(new ForegroundColorSpan(Color.RED), 0, cursor_pos, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+                editText.setText(WordtoSpan);
+                editText.setSelection(cursor_pos);
+            }
+
+            endTime = System.currentTimeMillis();
+            inputChar = myChar;
+//        add to row in here
+            add_character_rows();
+
+//        need to cast getContext to the interface type in order to access the method
+            ((InputStatusTracker) getContext()).updateCharCount();
+        }
     }
 
     @Override
