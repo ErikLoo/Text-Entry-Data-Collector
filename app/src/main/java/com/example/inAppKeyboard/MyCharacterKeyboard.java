@@ -86,6 +86,9 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
     private String myChar;
 
+    private String sub_id = "subject";
+    private String condition = "pose";
+
     public MyCharacterKeyboard(Context context) {
         this(context, null, 0);
     }
@@ -334,14 +337,13 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     }
 
     public void output_excel(String text_entry){
-        File file = new File(myActivity.getExternalFilesDir(null),"text_entry_"+text_entry+".xls");
+        File file = new File(myActivity.getExternalFilesDir(null),sub_id + "_"+ condition +"_"+text_entry+".xls");
         FileOutputStream outputStream =null;
 
         try {
             outputStream=new FileOutputStream(file);
             wb.write(outputStream);
 //            Toast.makeText(getContext(),"saving " + "text_entry_"+text_entry+".xls" + myActivity.getExternalFilesDir(null),Toast.LENGTH_LONG).show();
-
 
             Toast toast =  Toast.makeText(getContext(),"saving " + "text_entry_"+text_entry+".xls" + myActivity.getExternalFilesDir(null),Toast.LENGTH_LONG);
             toast.setGravity(Gravity.CENTER, 0, 0);
@@ -358,7 +360,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
             }
         }
 
-        init_excel();
+//        init_excel();
     }
 
     @Override
@@ -520,10 +522,20 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     public void reset_cursor(){
         cursor_pos = 0;
         editText.setSelection(cursor_pos);
+        init_excel();
+//        WordtoSpan.setSpan(new ForegroundColorSpan(Color.rgb(160,160,160)), 0, editText.getText().length(), Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
+//        editText.setText(WordtoSpan);
+
+
     }
 
     public int getCursorPos(){
         return cursor_pos;
+    }
+
+    public void updateFileInfo(String new_sub_id,String new_condition){
+        sub_id = new_sub_id;
+        condition = new_condition;
     }
 
 }

@@ -3,6 +3,7 @@ package com.example.inAppKeyboard;
 import android.Manifest;
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.hardware.Sensor;
@@ -49,14 +50,23 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 public class MainActivity extends AppCompatActivity implements InputStatusTracker {
     private TextView touch_x,touch_y;
     private MyCharacterKeyboard keyboard;
-    private String inputText;
+    private String inputText = "*********";
     private TextView input_text_view;
     private InputStream is;
+    private InputStream setup_is;
     private BufferedReader reader;
+    private BufferedReader setup_reader;
 
     private SensorManager senSensorManager;
     private Sensor senAccelerometer;
@@ -78,14 +88,35 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
     private float x1,x2;
     static final int MIN_DISTANCE = 150;
 
+//  default phrase number is 3
+    private int phrase_num = 3;
+    private int phrase_count = 0;
+    private Button phrase_confirm_but;
+    private EditText phrase_num_view;
+    private EditText sub_id_view;
+    private EditText condition_view;
+
+    private Bundle app_config = new Bundle();
+
+    private Integer[] file_index_array;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        Bundle new_app_config = new Bundle();
+        new_app_config = getIntent().getExtras();
+
+//        generate a random array of line indices
+        file_index_array = random_line_index_array();
 
         touch_x = (TextView) findViewById(R.id.touch_x);
         touch_y = (TextView) findViewById(R.id.touch_y);
+
+
+        sub_id_view = (EditText) findViewById(R.id.sub_id);
+        condition_view = (EditText) findViewById(R.id.pose);
 
 //        initalize keyboard
 //        final EditText editText = (EditText) findViewById(R.id.editText);
@@ -95,15 +126,15 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
         editText.setRawInputType(InputType.TYPE_CLASS_TEXT);
         editText.setTextIsSelectable(true);
 
+        phrase_num_view = (EditText) findViewById(R.id.phrase_num);
+        phrase_num_view.setText(Integer.toString(phrase_num));
+//        Read_app_setup();
 
-        ReadTextFile();
+//        ReadTextFile();
 
 //       read the first line of the txt file
-        inputText = readTextLine();
-
-//        Spannable WordtoSpan = new SpannableString(inputText);
-//        WordtoSpan.setSpan(new ForegroundColorSpan(Color.BLUE), 0, 6, Spannable.SPAN_EXCLUSIVE_EXCLUSIVE);
-//        editText.setText(WordtoSpan);
+//        inputText = readTextLine();
+        inputText = myReadLine();
 
         input_text_view = (TextView) findViewById(R.id.input_text);
         input_text_view.setText(inputText);
@@ -122,6 +153,28 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
 
         InputConnection ic = editText.onCreateInputConnection(new EditorInfo());
         keyboard.setInputConnection(ic);
+
+        if (new_app_config != null){
+
+            String sub_id = "subject";
+            String condition = "condition";
+
+            if (new_app_config.getInt("phrase_num",-1)!=-1){
+                phrase_num =new_app_config.getInt("phrase_num");
+            }
+
+            if(new_app_config.getString("sub_id")!=null){
+                sub_id = new_app_config.getString("sub_id");
+                sub_id_view.setText(sub_id);
+            }
+
+            if(new_app_config.getString("condition")!=null){
+                condition = new_app_config.getString("condition");
+                condition_view.setText(condition);
+            }
+
+            keyboard.updateFileInfo(sub_id,condition);
+        }
 
 //        initalize sensors
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
@@ -163,7 +216,8 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
 //                empty the text box
                 editText.setText("");
 //                read the next line of text
-                inputText = readTextLine();
+//                inputText = readTextLine();
+                inputText = myReadLine();
                 input_text_view.setText(inputText);
                 editText.setText(inputText);
                 if (inputText!=null){char_count.setText("(0/"+inputText.length()+")");}
@@ -198,27 +252,71 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
             }
         });
 
+        phrase_confirm_but = (Button) findViewById(R.id.confirm_phrase);
+        phrase_confirm_but.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                phrase_num = Integer.parseInt(phrase_num_view.getText().toString());
+                Toast toast =  Toast.makeText(getApplicationContext(),"Restart the task. Phrase # set to : " + phrase_num,Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+
+//                pass the new phrase_num to the next intent
+                app_config.putInt("phrase_num",phrase_num);
+                app_config.putString("sub_id",sub_id_view.getText().toString());
+                app_config.putString("condition",condition_view.getText().toString());
+                Intent intent = getIntent();
+                intent.putExtras(app_config);
+                finish();
+                startActivity(intent);
+
+            }
+        });
 
 
     }
+
+
+//    private void Read_app_setup() {
+//        String string = "";
+//        setup_is = this.getResources().openRawResource(R.raw.app_setup);
+//        setup_reader = new BufferedReader(new InputStreamReader(setup_is));
+//        try {
+//            string = setup_reader.readLine();
+//            setup_is.close();
+//
+//        }
+//        catch (IOException e) {
+//            e.printStackTrace();
+//        }
+//        phrase_num = Integer.parseInt(string);
+//
+//    }
+
+
 
     private void ReadTextFile() {
         String string = "";
         is = this.getResources().openRawResource(R.raw.phrases2_test);
         reader = new BufferedReader(new InputStreamReader(is));
+        phrase_count = 0;
+
     }
 
-    private String readTextLine(){
+    private String myReadLine2(){
         String string = "";
 
         try {
+//            myReadLine();
             string = reader.readLine();
-            if (string == null){
+            phrase_count++;
+            if (string == null || phrase_count>phrase_num){
 //                close the stream is the end has been reached
                 Toast toast =  Toast.makeText(getApplicationContext(),"All tasks complete",Toast.LENGTH_LONG);
                 toast.setGravity(Gravity.CENTER, 0, 0);
                 toast.show();
                 keyboard.setVisibility(View.GONE);
+                editText.setVisibility(View.INVISIBLE);
                 is.close();
             }else{
                 return string;
@@ -231,6 +329,59 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
         return string;
     }
 
+    private String myReadLine(){
+        String string = "";
+        try {
+//            myReadLine();
+//            android's readAllLines does not work for some reason
+            List<String> list = myReadAllLines();
+//            string =  Files.readAllLines(Paths.get("android.resource://" + getPackageName() + "/" + R.raw.phrases2_test, StandardCharsets.UTF_8)).get(file_index_array[phrase_count]);
+            string = list.get(file_index_array[phrase_count]);
+            phrase_count++;
+            if (string == null || phrase_count>phrase_num){
+//                close the stream is the end has been reached
+                Toast toast =  Toast.makeText(getApplicationContext(),"All tasks complete",Toast.LENGTH_LONG);
+                toast.setGravity(Gravity.CENTER, 0, 0);
+                toast.show();
+                keyboard.setVisibility(View.GONE);
+                editText.setVisibility(View.INVISIBLE);
+                is.close();
+            }else{
+                return string;
+            }
+        }
+        catch (IOException e) {
+            System.out.println("File does not exist");
+            e.printStackTrace();
+        }
+
+        return string;
+    }
+
+    public  List<String> myReadAllLines() throws IOException {
+        is = this.getResources().openRawResource(R.raw.phrases2_test);
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
+            List<String> result = new ArrayList<String>();
+            for (;;) {
+                String line = reader.readLine();
+                if (line == null)
+                    break;
+                result.add(line);
+            }
+            return result;
+        }
+    }
+
+    private Integer[] random_line_index_array(){
+        Integer[] arr = new Integer[100];
+        for (int i = 0; i < arr.length; i++) {
+            arr[i] = i;
+        }
+        Collections.shuffle(Arrays.asList(arr));
+
+        System.out.println(Arrays.toString(arr));
+        return arr;
+    }
 
     private SensorEventListener mAccelSensorListener = new SensorEventListener() {
         @Override
@@ -365,4 +516,6 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
             next_but.setVisibility(View.INVISIBLE);
         }
     }
+
+
 }
