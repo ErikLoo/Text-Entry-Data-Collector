@@ -359,7 +359,7 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
     }
 
     public  List<String> myReadAllLines() throws IOException {
-        is = this.getResources().openRawResource(R.raw.phrases2_test);
+        is = this.getResources().openRawResource(R.raw.phrases2);
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(is))) {
             List<String> result = new ArrayList<String>();
             for (;;) {
@@ -373,13 +373,13 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
     }
 
     private Integer[] random_line_index_array(){
-        Integer[] arr = new Integer[100];
+        Integer[] arr = new Integer[500];
         for (int i = 0; i < arr.length; i++) {
             arr[i] = i;
         }
         Collections.shuffle(Arrays.asList(arr));
 
-        System.out.println(Arrays.toString(arr));
+//        System.out.println(Arrays.toString(arr));
         return arr;
     }
 

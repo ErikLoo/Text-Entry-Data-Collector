@@ -38,6 +38,9 @@ import org.apache.poi.ss.usermodel.Workbook;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public class MyCharacterKeyboard extends LinearLayout implements View.OnClickListener {
 //    private Button button1, button2, button3, button4,
@@ -337,8 +340,14 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     }
 
     public void output_excel(String text_entry){
-        File file = new File(myActivity.getExternalFilesDir(null),sub_id + "_"+ condition +"_"+text_entry+".xls");
+
+        String currentDate = new SimpleDateFormat("dd-MM-yyyy", Locale.getDefault()).format(new Date());
+        String currentTime = new SimpleDateFormat("HH:mm:ss", Locale.getDefault()).format(new Date());
+
+        File file = new File(myActivity.getExternalFilesDir(null),sub_id + "_"+ condition +"_"+text_entry+ "_" + currentDate + "_" + currentTime+"_"+".xls");
         FileOutputStream outputStream =null;
+
+
 
         try {
             outputStream=new FileOutputStream(file);
