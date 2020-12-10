@@ -180,7 +180,7 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
         senSensorManager = (SensorManager) getSystemService(Context.SENSOR_SERVICE);
 
         senAccelerometer = senSensorManager.getDefaultSensor(Sensor.TYPE_ACCELEROMETER);
-        senSensorManager.registerListener(mAccelSensorListener, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
+        senSensorManager.registerListener(mAccelSensorListener, senAccelerometer , SensorManager.SENSOR_DELAY_FASTEST);
         accel_x = (TextView) findViewById(R.id.accel_x);
         accel_y = (TextView) findViewById(R.id.accel_y);
         accel_z = (TextView) findViewById(R.id.accel_z);
@@ -189,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
 //        senSensorManager.registerListener(this, senAccelerometer , SensorManager.SENSOR_DELAY_NORMAL);
 
 //        only need to register the listener once then it listens to all the sensor events
-        senSensorManager.registerListener(mGyroSensorListener, senGyro , SensorManager.SENSOR_DELAY_NORMAL);
+        senSensorManager.registerListener(mGyroSensorListener, senGyro , SensorManager.SENSOR_DELAY_FASTEST);
         gyro_x = (TextView) findViewById(R.id.gyro_x);
         gyro_y = (TextView) findViewById(R.id.gyro_y);
         gyro_z = (TextView) findViewById(R.id.gyro_z);
@@ -277,21 +277,6 @@ public class MainActivity extends AppCompatActivity implements InputStatusTracke
     }
 
 
-//    private void Read_app_setup() {
-//        String string = "";
-//        setup_is = this.getResources().openRawResource(R.raw.app_setup);
-//        setup_reader = new BufferedReader(new InputStreamReader(setup_is));
-//        try {
-//            string = setup_reader.readLine();
-//            setup_is.close();
-//
-//        }
-//        catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//        phrase_num = Integer.parseInt(string);
-//
-//    }
 
 
 

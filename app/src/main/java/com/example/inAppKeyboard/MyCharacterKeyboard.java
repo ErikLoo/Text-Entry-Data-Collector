@@ -458,6 +458,15 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         ((InputStatusTracker) getContext()).updateCharCount();
 
 //        update the char count in the main function
+//        int[] location = new int[2];
+//        view.getLocationOnScreen(location);
+//        int but_x = location[0] + view.getWidth()  / 2;
+//        int but_y = location[1] + view.getHeight()  / 2;
+//
+//        System.out.println("Coords: " + but_x + "," + but_y);
+//        System.out.println("view width: " + view.getWidth());
+//        System.out.println("view height: " + view.getHeight());
+
 
     }
 
