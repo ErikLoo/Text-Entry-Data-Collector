@@ -67,7 +67,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
     private int row_count=1;
     private String inputChar;
     private String intendedChar;
-    private long startTime;
+    private long startTime = 10086;
     private long endTime;
 
 //    log touch
@@ -91,6 +91,9 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
     private String sub_id = "subject";
     private String condition = "pose";
+
+    private int oldMotionEvent = 10086;
+
 
     public MyCharacterKeyboard(Context context) {
         this(context, null, 0);
@@ -297,6 +300,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
         cell=row.createCell(2);
         cell.setCellValue(startTime);
+//        cell.setCellValue(touchTime);
         cell.setCellStyle(cellStyle);
 
 
@@ -466,6 +470,7 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 //        System.out.println("Coords: " + but_x + "," + but_y);
 //        System.out.println("view width: " + view.getWidth());
 //        System.out.println("view height: " + view.getHeight());
+        oldMotionEvent = MotionEvent.ACTION_UP;
 
 
     }
@@ -500,6 +505,8 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
 
 //        need to cast getContext to the interface type in order to access the method
             ((InputStatusTracker) getContext()).updateCharCount();
+//            oldMotionEvent = MotionEvent.ACTION_UP;
+
         }
     }
 
@@ -522,14 +529,29 @@ public class MyCharacterKeyboard extends LinearLayout implements View.OnClickLis
         int action = MotionEventCompat.getActionMasked(event);
         switch(action) {
             case (MotionEvent.ACTION_DOWN):
-//                only record the time when it is down
-                startTime = System.currentTimeMillis();
+//              DO NOT update the startTime when the action is hold
+                if (oldMotionEvent!=MotionEvent.ACTION_DOWN) {
+//                    Toast.makeText(getContext(),"button pressed", Toast.LENGTH_SHORT).show();
+                    startTime = System.currentTimeMillis();
+                    oldMotionEvent = MotionEvent.ACTION_DOWN;
+                }
+          case (MotionEvent.ACTION_UP):
+                oldMotionEvent = MotionEvent.ACTION_UP;
         }
+
+
+//      if button is not pressed update the startTime
+//      else don't update the
+
+//        startTime = System.currentTimeMillis();
+
 
         touchTime = System.currentTimeMillis();
         float[] touch_data = {mLastX,mLastY};
 //        Toast.makeText(getContext(),"touch_data x: " + touch_data[0], Toast.LENGTH_SHORT).show();
         add_data_rows("touch_data",touch_id,touchTime,touch_data);
+
+
         return false;
     }
 
